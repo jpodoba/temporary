@@ -1,0 +1,30 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "vnetName": {
+            "value": "vnetjpodoba001"
+        },
+        "vnetPrefix": {
+            "value": "10.100.0.0/16"
+        },
+        "subnets": {
+            "value": [
+                {
+                    "name": "private-subnet",
+                    "addressPrefix": "10.100.0.0/24"
+                },
+                {
+                    "name": "public-subnet",
+                    "addressPrefix": "10.100.1.0/27"
+                }
+            ]
+        },
+        "workspaceName": {
+            "value": "dbwjpodoba001"
+        },
+        "location": {
+            "value": "northcentralus"
+        }
+    }
+}

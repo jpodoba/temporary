@@ -1,0 +1,96 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "vnetName": {
+            "defaultValue": "vnetjpodoba001",
+            "type": "string",
+            "metadata": {
+                "description": "The name of the virtual network to create."
+            }
+        },
+        "vnetPrefix": {
+            "defaultValue": "10.0.0.0/16",
+            "type": "string",
+            "metadata": {
+                "description": "Cidr range for the vnet."
+            }
+        },
+        "subnets": {
+            "type": "Array",
+            "metadata": {
+                "description": "Subnet array with subnets names and Cidr range."
+            }
+        },
+        "workspaceName": {
+            "defaultValue": "dbwjpodoba001",
+            "type": "String",
+            "metadata": {
+                "description": "The name of the Azure Databricks workspace to create."
+            }
+        },
+        "location": {
+            "type": "string",
+            "metadata": {
+                "description": "Location for all resources."
+            }
+        }
+    },
+    "variables": {
+        "nsgName": "[concat('databricksnsg', uniqueString(parameters('workspaceName')))]",
+        "nsgId": "[resourceId('Microsoft.Network/networkSecurityGroups', variables('nsgName'))]"
+    },
+    "resources": [
+        {
+            "type": "Microsoft.Network/networkSecurityGroups",
+            "apiVersion": "2019-06-01",
+            "name": "[variables('nsgName')]",
+            "location": "[parameters('location')]"
+        },
+        {
+            "name": "[parameters('vnetName')]",
+            "type": "Microsoft.Network/VirtualNetworks",
+            "apiVersion": "2019-09-01",
+            "location": "[parameters('location')]",
+            "properties": {
+                "addressSpace": {
+                    "addressPrefixes": [
+                        "[parameters('vnetPrefix')]"
+                    ]
+                },
+                "copy": [
+                    {
+                        "name": "subnets",
+                        "count": "[length(parameters('subnets'))]",
+                        "input": {
+                            "name": "[parameters('subnets')[copyIndex('subnets')].name]",
+                            "properties": {
+                                "addressPrefix": "[parameters('subnets')[copyIndex('subnets')].addressPrefix]",
+
+                                "networkSecurityGroup": {
+                                    "id": "[variables('nsgId')]"
+                                },
+                                "delegations": [
+                                    {
+                                        "name": "[concat('databricks-del-', uniqueString(parameters('subnets')[copyIndex('subnets')].name))]",
+                                        "properties": {
+                                            "serviceName": "Microsoft.Databricks/workspaces"
+                                        }
+                                    }
+                                ]
+                            }
+                        }
+                    }
+                ],
+                "enableDdosProtection": false,
+                "enableVmProtection": false
+            }
+        }
+    ],
+    "outputs": {
+        "vnetId": {
+            "type": "string",
+            "value": "[resourceId('Microsoft.Network/virtualNetworks', parameters('vnetName'))]"
+        }
+    }
+}
